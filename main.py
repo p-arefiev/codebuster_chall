@@ -80,18 +80,24 @@ while True:
         # Write an action using print
         # To debug: print("Debug messages...", file=sys.stderr, flush=True)
         # MOVE x y | BUST id | RELEASE
-        if min_buster and i in [x["buster"] for x in min_buster]:
+        if all_buster[i]['x'] <= 1000 and all_buster[i]['y'] <= 1000:
+            print("RELEASE")
+        
+        elif all_buster[i]['state'] == 1:
+            print("MOVE 0 0")
+
+        elif all_buster[i]['state'] == 0 and i in [x["buster"] for x in min_buster]:
             x_cible = [x for x in min_buster if x['buster'] == i][0]['x']
             y_cible = [x for x in min_buster if x['buster'] == i][0]['y']
 
-            if distance(x_cible, y_cible, x, y) < 1750:
+            dist_to_ghost = distance(x_cible, y_cible, x, y)
+
+            if dist_to_ghost >= 900 and dist_to_ghost < 1700:
                 print(f"BUST {[x for x in min_buster if x['buster'] == i][0]['ghost']}")
-            else:
-                print(f"MOVE {x_cible} {y_cible}")
-        elif value >= 0:
-            print("MOVE 0 0")
-        elif x == 0 and y == 0:
-            print("RELEASE")
+            
+            elif dist_to_ghost > 1700 or dist_to_ghost < 900:
+                print(f"MOVE {x_cible - 500 } {y_cible - 500}")
+
         else:
             print(f"MOVE {int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 9000")
 
