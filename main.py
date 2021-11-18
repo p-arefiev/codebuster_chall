@@ -90,10 +90,10 @@ def closest_busters(all_ghost, all_buster):
 def update_status(all_buster):
     for buster_iter in all_buster:
 
-        if buster_iter.value != -1 and (buster.x > 1600 or buster_iter.y > 1600) :
+        if buster_iter.value != -1 and (buster_iter.x > 1600 or buster_iter.y > 1600) :
             buster_iter.status = "GB"
             continue
-        elif buster_iter.value != -1 and (buster_iter.x <= 1600 or buster.y <= 1600):
+        elif buster_iter.value != -1 and (buster_iter.x <= 1600 or buster_iter.y <= 1600):
             buster_iter.status = "READY"
             continue
         else:
@@ -141,12 +141,16 @@ while True:
         print(f"buster {buster.entity_id} closes ghost: {buster.closest_ghost} | status: {buster.status}", file=sys.stderr, flush=True)
         if buster.status == "CHASING":
             print(f"MOVE {buster.closest_ghost_x} {buster.closest_ghost_y}")
+
         elif buster.status == "BUSTING":
             print(f"BUST {buster.closest_ghost}")
+
         elif buster.status == "GB": 
             print(f"MOVE {0} {0}")
+
         elif buster.status == "READY":
             print(f"RELEASE")
+
         else:
             print(
                 f"MOVE {int(math.tan(math.radians((buster.entity_id+1)*(90/(busters_per_player+1))))*9000)} 9000"
