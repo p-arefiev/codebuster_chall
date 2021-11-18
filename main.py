@@ -134,8 +134,19 @@ def update_status():
         else:
             buster_iter.status = "IDLE"
 
-def random_mvm(buster: Buster   ):
-    pass
+def direction( busters_per_player, my_team_id, i):
+    rand_x = random.randint(0, 100 )
+    rand_y = random.randint(0, 100 )
+    if my_team_id == 0:
+        if busters_per_player == 1:
+            print(f"MOVE 16000 9000")
+        else:
+            print(f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player +1))))*9000)} 9000")
+    else: 
+        if busters_per_player == 1:
+            print(f"MOVE 0 0")
+        else:
+            print(f"MOVE {rand_x+int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
 
 # game loop
 while True:
@@ -177,4 +188,4 @@ while True:
             print(f"RELEASE")
 
         else:
-            print(f"MOVE {int(16000/2)} {int(9000/2)}")
+            direction(busters_per_player,my_team_id, index)
