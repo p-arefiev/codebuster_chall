@@ -32,6 +32,18 @@ def info_round(entity_id, x, y, entity_type, state, value):
 def distance(x1, y1, x2, y2):
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
 
+def direction( busters_per_player, my_team_id, i):
+    if my_team_id == 0:
+        if busters_per_player == 1:
+            print(f"MOVE 16000 9000")
+        else:
+            print(f"MOVE {int(math.tan(math.radians((i+1)*(90/(busters_per_player +1))))*9000)} 9000")
+    else: 
+        if busters_per_player == 1:
+            print(f"MOVE 0 0")
+        else:
+            print(f"MOVE {int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
+
 def closest_busters(all_ghost, all_buster):
     min_buster = []
     if len(all_ghost) > 0:
@@ -93,7 +105,7 @@ while True:
         elif x == 0 and y == 0:
             print("RELEASE")
         else:
-            print(f"MOVE {int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 9000")
+            direction(busters_per_player,my_team_id, i)
 
             
             
