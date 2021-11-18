@@ -7,54 +7,77 @@ busters_per_player = int(input())  # the amount of busters you control
 ghost_count = int(input())  # the amount of ghosts on the map
 my_team_id = int(input())  # if this is 0, your base is on the top left of the map, if it is one, on the bottom right
 
-def info_round(entity_id, x, y, entity_type, state, value):
+class Entity():
+    def __init__(self, entity_id, x, y, state, value):
+        self.entity_id = 0
+        self.x = 0
+        self.y = 0
+        self.state = 0
+        self.value = 0
+
+class Buster(Entity):
+    def __init__(self, entity_id, x, y, entity_type, state, value):
+        super().__init__(
+            entity_id,
+            x,
+            y,
+            state,
+            value,
+        )
+
+        self.entity_type = 0
+        self.closest_ghost = 0
+        self.closest_ghost_x = 0
+        self.closest_ghost_y = 0
+        self.status = 0
+
+class Ghost(Entity):
+    def __init__(self, entity_id, x, y, entity_type, state, value):
+        super().__init__(
+            entity_id,
+            x,
+            y,
+            state,
+            value,
+        )
+
+        self.entity_type = 0
+
+def info_turn(entity_id, x, y, entity_type, state, value):
     if entity_type == -1:
-        all_ghost.append({
-            "entity_id" : entity_id,
-            "x": x,
-            "y": y,
-            "entity_type": entity_type,
-            "state": state,
-            "value": value
-            }
-        )
+        ghost = Ghost(entity_id, x, y, entity_type, state, value)
+        all_ghost.append( ghost )
     elif entity_type == my_team_id:
-        all_buster.append({
-            "entity_id" : entity_id,
-            "x": x,
-            "y": y,
-            "entity_type": entity_type,
-            "state": state,
-            "value": value
-            } 
-        )
+        buster = Buster(entity_id, x, y, entity_type, state, value)
+        all_buster.append(buster)
 
 def distance(x1, y1, x2, y2):
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
 
 def closest_busters(all_ghost, all_buster):
     min_buster = []
-    if len(all_ghost) > 0:
-        for ghost_iter in range(len(all_ghost)): 
-            buster_dist = []
 
-            for buster_iter in range(busters_per_player):
-                buster_dist.append(
-                    {
-                        "buster": all_buster[buster_iter]["entity_id"],
-                        "ghost": all_ghost[ghost_iter]["entity_id"],
-                        "dist": distance(
-                            all_buster[buster_iter]['x'],
-                            all_buster[buster_iter]['y'],
-                            all_ghost[ghost_iter]['x'],
-                            all_ghost[ghost_iter]['y']),
-                        "x" : all_ghost[ghost_iter]['x'],
-                        "y" : all_ghost[ghost_iter]['y'] 
-                    }   
-                )
-            min_buster.append(min(buster_dist, key=lambda x:x['dist']))
-            print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
-        print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
+    for ghost_iter in range(len(all_ghost)): 
+        buster_dist = []
+
+        for buster_iter in range(busters_per_player):
+            buster_dist.append(
+                {
+                    "buster": all_buster[buster_iter].entity_id,
+                    "ghost": all_ghost[ghost_iter].entity_id,
+                    "dist": distance(
+                        all_buster[buster_iter].x,
+                        all_buster[buster_iter].y,
+                        all_ghost[ghost_iter].x,
+                        all_ghost[ghost_iter].y),
+                    "x" : all_ghost[ghost_iter].x,
+                    "y" : all_ghost[ghost_iter].y
+                }   
+            )
+        min_buster.append(min(buster_dist, key=lambda x:x['dist']))
+        print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
+    print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
+
     return min_buster   
 
 # game loop
@@ -70,36 +93,18 @@ while True:
         # state: For busters: 0=idle, 1=carrying a ghost.
         # value: For busters: Ghost id being carried. For ghosts: number of busters attempting to trap this ghost.
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
-        info_round(entity_id, x, y, entity_type, state, value)
+        info_turn(entity_id, x, y, entity_type, state, value)
 
-    print(f"all ghost : {len(all_ghost)}", file=sys.stderr, flush=True)
-    min_buster = closest_busters(all_ghost, all_buster)
+    print(f"ghost count: {len(all_ghost)}", file=sys.stderr, flush=True)
+    print(f"buster count: {len(all_ghost)}", file=sys.stderr, flush=True)
 
     for i in range(busters_per_player):
 
         # Write an action using print
         # To debug: print("Debug messages...", file=sys.stderr, flush=True)
         # MOVE x y | BUST id | RELEASE
-        if all_buster[i]['x'] <= 1000 and all_buster[i]['y'] <= 1000:
-            print("RELEASE")
         
-        elif all_buster[i]['state'] == 1:
-            print("MOVE 0 0")
-
-        elif all_buster[i]['state'] == 0 and i in [x["buster"] for x in min_buster]:
-            x_cible = [x for x in min_buster if x['buster'] == i][0]['x']
-            y_cible = [x for x in min_buster if x['buster'] == i][0]['y']
-
-            dist_to_ghost = distance(x_cible, y_cible, x, y)
-
-            if dist_to_ghost >= 900 and dist_to_ghost < 1700:
-                print(f"BUST {[x for x in min_buster if x['buster'] == i][0]['ghost']}")
-            
-            elif dist_to_ghost > 1700 or dist_to_ghost < 900:
-                print(f"MOVE {x_cible - 500 } {y_cible - 500}")
-
-        else:
-            print(f"MOVE {int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 9000")
+        print(f"MOVE {int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 9000")
 
             
             
