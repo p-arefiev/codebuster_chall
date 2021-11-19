@@ -38,7 +38,7 @@ class Buster(Entity):
         self.closest_ghost_y = 0
         self.closest_op_buster = 0
         self.closest_op_buster_dist = 0
-        self.stun = False
+        self.stun_flag = False
         self.status = "IDLE"
 
 
@@ -144,36 +144,47 @@ def update_status():
     - BUSTING => a buster is ready to bust
     - GB => buster is going back to his base while carrying a ghost
     - READY => when a buster is ready to release a ghost in his base
+    - STUN => has a buster in sight, go for the kill
     """
-    for buster_iter in my_busters:
-        if buster_iter.value != -1 and not in_base(buster_iter.x, buster_iter.y):
-            buster_iter.status = "GB"
+    for buster in my_busters:
+
+        # priority to ghost releasing
+        if buster.value != -1 and not in_base(buster.x, buster.y):
+            buster.status = "GB"
             continue
-        elif buster_iter.value != -1 and in_base(buster_iter.x, buster_iter.y):
-            buster_iter.status = "READY"
-            buster_iter.closest_ghost = 0
-            buster_iter.closest_ghost_dist = 0
+        elif buster.value != -1 and in_base(buster.x, buster.y):
+            buster.status = "READY"
+            buster.closest_ghost = 0
+            buster.closest_ghost_dist = 0
             continue
         else:
             pass
-        if buster_iter.closest_ghost > 0 and buster_iter.closest_ghost_dist > 1700:
-            buster_iter.status = "CHASING"
+        
+        # then is a buster sees another buster stun him
+        if buster.closest_op_buster != 0 and buster.closest_op_buster_dist < 1600 and not buster.stun_flag:
+            buster.status = "STUN"
+            buster.stun_flag = True
+            continue
+
+        # check if a ghost is in sight
+        if buster.closest_ghost > 0 and buster.closest_ghost_dist > 1700:
+            buster.status = "CHASING"
         elif (
-            buster_iter.closest_ghost > 0
-            and buster_iter.closest_ghost_dist < 1700
-            and buster_iter.closest_ghost_dist > 900
+            buster.closest_ghost > 0
+            and buster.closest_ghost_dist < 1700
+            and buster.closest_ghost_dist > 900
         ):
-            buster_iter.status = "BUSTING"
-        elif buster_iter.closest_ghost > 0 and buster_iter.closest_ghost_dist < 900:
-            buster_iter.closest_ghost_x = buster_iter.closest_ghost_x - (
+            buster.status = "BUSTING"
+        elif buster.closest_ghost > 0 and buster.closest_ghost_dist < 900:
+            buster.closest_ghost_x = buster.closest_ghost_x - (
                 -900 if my_team_id == 0 else 900
             )
-            buster_iter.closest_ghost_y = buster_iter.closest_ghost_y - (
+            buster.closest_ghost_y = buster.closest_ghost_y - (
                 -900 if my_team_id == 0 else 900
             )
-            buster_iter.status = "CHASING"
+            buster.status = "CHASING"
         else:
-            buster_iter.status = "IDLE"
+            buster.status = "IDLE"
 
 
 def direction(busters_per_player, my_team_id, i):
@@ -283,7 +294,7 @@ while True:
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
         info_turn(entity_id, x, y, entity_type, state, value)
 
-    print(f"entity count: {len(all_entities)} ", file=sys.stderr, flush=True)
+    print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
 
     closest_entities(all_entities)
     update_status()
@@ -302,6 +313,9 @@ while True:
 
         elif buster.status == "READY":
             print(f"RELEASE")
+
+        elif buster.status == "STUN":
+            print(f"STUN {buster.closest_op_buster}")
 
         else:
             direction(busters_per_player, my_team_id, index)
