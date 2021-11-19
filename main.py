@@ -4,11 +4,12 @@ import random
 
 # Send your busters out into the fog to trap ghosts and bring them home!
 
-busters_per_player = int(input())  # the amount of busters you control
-ghost_count = int(input())  # the amount of ghosts on the map
-my_team_id = int(
-    input()
-)  # if this is 0, your base is on the top left of the map, if it is one, on the bottom right
+# The amount of busters you control
+busters_per_player = int(input())  
+# The amount of ghosts on the map
+ghost_count = int(input())  
+# if this is 0, your base is on the top left of the map, if it is one, on the bottom right
+my_team_id = int(input())  
 
 class Entity:
     def __init__(self, entity_id, x, y, state, value):
@@ -32,6 +33,8 @@ class Buster(Entity):
         self.closest_ghost_dist = 0
         self.closest_ghost_x = 0
         self.closest_ghost_y = 0
+        self.closest_op_buster = 0
+        self.closest_op_buster_dist = 0
         self.status = "IDLE"
 
 class Ghost(Entity):
@@ -47,6 +50,31 @@ class Ghost(Entity):
 
 his_busters = []
 my_busters = []
+
+def print_buster_info(buster: Buster):
+
+    header = [
+        'X', 'Y', 'state', 'value', 
+        'closest_ghost', 'closest_ghost_dist', 
+        'closest_op_buster', 'closest_op_buster_dist'
+        ]
+    row = [
+        buster.x, buster.y, buster.state, buster.value,
+        buster.closest_ghost, buster.closest_ghost_dist,
+        buster.closest_op_buster, buster.closest_op_buster_dist
+    ]
+
+    print('{:-^106}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
+    data = [header, row]
+    dash = '-' * 106
+
+    for i in range(len(data)):
+        if i == 0:
+            print('|{:^6s}{:^6s}{:^7s}{:^7s}{:^15s}{:^20s}{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
+            print(dash, file=sys.stderr, flush=True)
+        else:
+            print('|{:^6}{:^6}{:^7}{:^7}{:^15}{:^20}{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
+            print(dash, file=sys.stderr, flush=True)
 
 # Busters creation for the current game
 for i in range(busters_per_player):
@@ -190,11 +218,16 @@ def direction( busters_per_player, my_team_id, i):
         else:
             print(f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
 
+
+
 # game loop
 while True:
+
+    # list with all ghost visible for this loop
     all_ghost = []
 
-    entities = int(input())  # the number of busters and ghosts visible to you
+    # the number of busters and ghosts visible to you
+    entities = int(input())  
 
     for i in range(entities):
         # entity_id: buster id or ghost id
@@ -211,10 +244,8 @@ while True:
     update_status()
 
     for index, buster in enumerate(my_busters):
-        # Write an action using print
-        # To debug: print("Debug messages...", file=sys.stderr, flush=True)
-        # MOVE x y | BUST id | RELEASE
-        print(f"buster {buster.entity_id} closes ghost: {buster.closest_ghost} | status: {buster.status}", file=sys.stderr, flush=True)
+        #print(f"buster {buster.entity_id} closes ghost: {buster.closest_ghost} | status: {buster.status}", file=sys.stderr, flush=True)
+        print_buster_info(buster)
         
         if buster.status == "CHASING":
             print(f"MOVE {buster.closest_ghost_x} {buster.closest_ghost_y}")
