@@ -48,22 +48,21 @@ class Ghost(Entity):
 his_busters = []
 my_busters = []
 
+# Busters creation for the current game
 for i in range(busters_per_player):
     if my_team_id == 0:
         # Create obj for all my busters
-        buster = Buster(i, 0, 0, 0, 0, 0)
-        my_busters.append(buster)
+        my_busters.append(Buster(i, 0, 0, 0, 0, 0))
         # Create obj for all my opponent busters
-        buster_opp = Buster(i + busters_per_player, 0, 0, 1, 0, 0)
-        his_busters.append(buster)
+        his_busters.append(Buster(i + busters_per_player, 0, 0, 1, 0, 0))
     else:
         # Create obj for all my busters
-        buster = Buster(i + busters_per_player, 0, 0, 1, 0, 0)
-        my_busters.append(buster)
+        my_busters.append(Buster(i + busters_per_player, 0, 0, 1, 0, 0))
         # Create obj for all my opponent busters
-        buster_opp = Buster(i, 0, 0, 0, 0, 0)
-        his_busters.append(buster)
+        his_busters.append(Buster(i, 0, 0, 0, 0, 0))
 
+
+# Set base position depending on which team we are
 ori_x = 0
 ori_y = 0
 if my_team_id == 1:
@@ -71,24 +70,48 @@ if my_team_id == 1:
     ori_y = 9000
 
 def info_turn(entity_id, x, y, entity_type, state, value):
+    """
+    Each loop create all insight ghosts.
+    Update our buster positions state & value
+    Same for opponent busters.
+    """
+
+    # Check entity type to choose what action to do :  create a ghost / update our
+    # Busters infos / update opponent buster info
     if entity_type == -1:
         ghost = Ghost(entity_id, x, y, entity_type, state, value)
         all_ghost.append(ghost)
     elif entity_type == my_team_id :
+            # Use entity id to select one of our buster
             n = entity_id if my_team_id == 0 else entity_id - busters_per_player
             my_busters[n].x = x
             my_busters[n].y = y
             my_busters[n].state = state
             my_busters[n].value = value
+    else :
+            # Use entity id to select one of his buster
+            n = entity_id - busters_per_player if my_team_id == 0 else entity_id
+            his_busters[n].x = x
+            his_busters[n].y = y
+            his_busters[n].state = state
+            his_busters[n].value = value
 
 def distance(x1, y1, x2, y2):
+    """
+    return distance between 2 points
+    """
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
 
 def closest_busters(all_ghost):
+    """
+    Look for closest ghost per buster when ghost are insight
+    """
 
+    # Loop through all created ghost for this loop
     for ghost_iter in range(len(all_ghost)):
         buster_dist = []
-    
+
+        # For each buster find its distance for a given ghost
         for buster_iter in range(busters_per_player):
             buster_dist.append(distance(
                 my_busters[buster_iter].x,
@@ -96,22 +119,42 @@ def closest_busters(all_ghost):
                 all_ghost[ghost_iter].x,
                 all_ghost[ghost_iter].y,
             ))
-        #print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
-        #print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
+        
+        # With all distance calculated choose the smaller one 
+        # => closest buster for this ghost
         min_buster = min(buster_dist)
         min_index = buster_dist.index(min_buster)
+
+        # Update buster params with closest ghost informations
         my_busters[min_index].closest_ghost = all_ghost[ghost_iter].entity_id
         my_busters[min_index].closest_ghost_x = all_ghost[ghost_iter].x
         my_busters[min_index].closest_ghost_y = all_ghost[ghost_iter].y
         my_busters[min_index].closest_ghost_dist = min_buster
 
+        # Debug printing
+        print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
+        print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
+
 def in_base(x, y):
+    """
+    Find out if a buster is within the range of his base.
+    Used to tell if a buster needs to release a ghost.
+    """
     if distance(x, y, ori_x, ori_y) > 1600:
         return False
     else:
         return True
 
 def update_status():
+    """
+    Main buster loop here its overall status is updated.
+    A buster can have one of the 5 status.
+    - IDLE => looking for an entity
+    - CHASING => ghost in sight, getting closer to a ghost to bust him
+    - BUSTING => a buster is ready to bust
+    - GB => buster is going back to his base while carrying a ghost
+    - READY => when a buster is ready to release a ghost in his base
+    """
     for buster_iter in my_busters:
         if buster_iter.value != -1 and not in_base(buster_iter.x, buster_iter.y) :
             buster_iter.status = "GB"
@@ -167,7 +210,6 @@ while True:
     closest_busters(all_ghost)
     update_status()
 
-    #for i in range(busters_per_player):
     for index, buster in enumerate(my_busters):
         # Write an action using print
         # To debug: print("Debug messages...", file=sys.stderr, flush=True)
