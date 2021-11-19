@@ -13,12 +13,13 @@ my_team_id = int(input())
 
 
 class Entity:
-    def __init__(self, entity_id, x, y, state, value):
+    def __init__(self, entity_id, x, y, entity_type, state, value):
         self.entity_id = entity_id
         self.x = x
         self.y = y
         self.state = state
         self.value = value
+        self.entity_type = entity_type
 
 
 class Buster(Entity):
@@ -27,46 +28,29 @@ class Buster(Entity):
             entity_id,
             x,
             y,
+            entity_type,
             state,
             value,
         )
-        self.entity_type = entity_type
         self.closest_ghost = 0
         self.closest_ghost_dist = 0
         self.closest_ghost_x = 0
         self.closest_ghost_y = 0
         self.closest_op_buster = 0
         self.closest_op_buster_dist = 0
+        self.stun = False
         self.status = "IDLE"
 
 
-class Ghost(Entity):
-    def __init__(self, entity_id, x, y, entity_type, state, value):
-        super().__init__(
-            entity_id,
-            x,
-            y,
-            state,
-            value,
-        )
-        self.entity_type = entity_type
-
-
-his_busters = []
-my_busters = []
-
 # Busters creation for the current game
+my_busters = []
 for i in range(busters_per_player):
     if my_team_id == 0:
         # Create obj for all my busters
         my_busters.append(Buster(i, 0, 0, 0, 0, 0))
-        # Create obj for all my opponent busters
-        his_busters.append(Buster(i + busters_per_player, 0, 0, 1, 0, 0))
     else:
         # Create obj for all my busters
         my_busters.append(Buster(i + busters_per_player, 0, 0, 1, 0, 0))
-        # Create obj for all my opponent busters
-        his_busters.append(Buster(i, 0, 0, 0, 0, 0))
 
 # Set base position depending on which team we are
 ori_x = 0
@@ -85,10 +69,7 @@ def info_turn(entity_id, x, y, entity_type, state, value):
 
     # Check entity type to choose what action to do :  create a ghost / update our
     # Busters infos / update opponent buster info
-    if entity_type == -1:
-        ghost = Ghost(entity_id, x, y, entity_type, state, value)
-        all_ghost.append(ghost)
-    elif entity_type == my_team_id:
+    if entity_type == my_team_id:
         # Use entity id to select one of our buster
         n = entity_id if my_team_id == 0 else entity_id - busters_per_player
         my_busters[n].x = x
@@ -96,12 +77,7 @@ def info_turn(entity_id, x, y, entity_type, state, value):
         my_busters[n].state = state
         my_busters[n].value = value
     else:
-        # Use entity id to select one of his buster
-        n = entity_id - busters_per_player if my_team_id == 0 else entity_id
-        his_busters[n].x = x
-        his_busters[n].y = y
-        his_busters[n].state = state
-        his_busters[n].value = value
+        all_entities.append(Entity(entity_id, x, y, entity_type, state, value))
 
 
 def distance(x1, y1, x2, y2):
@@ -111,23 +87,21 @@ def distance(x1, y1, x2, y2):
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
 
 
-def closest_busters(all_ghost):
+def closest_entities(all_entities):
     """
     Look for closest ghost per buster when ghost are insight
     """
-
+    
     # Loop through all created ghost for this loop
-    for ghost_iter in range(len(all_ghost)):
+    for entity in all_entities:
         buster_dist = []
 
         # For each buster find its distance for a given ghost
-        for buster_iter in range(busters_per_player):
+        for buster in my_busters:
             buster_dist.append(
                 distance(
-                    my_busters[buster_iter].x,
-                    my_busters[buster_iter].y,
-                    all_ghost[ghost_iter].x,
-                    all_ghost[ghost_iter].y,
+                    buster.x, buster.y,
+                    entity.x, entity.y,
                 )
             )
 
@@ -135,16 +109,19 @@ def closest_busters(all_ghost):
         # => closest buster for this ghost
         min_buster = min(buster_dist)
         min_index = buster_dist.index(min_buster)
-
-        # Update buster params with closest ghost informations
-        my_busters[min_index].closest_ghost = all_ghost[ghost_iter].entity_id
-        my_busters[min_index].closest_ghost_x = all_ghost[ghost_iter].x
-        my_busters[min_index].closest_ghost_y = all_ghost[ghost_iter].y
-        my_busters[min_index].closest_ghost_dist = min_buster
+        if entity.entity_type == -1:
+            # Update buster params with closest ghost informations
+            my_busters[min_index].closest_ghost         = entity.entity_id
+            my_busters[min_index].closest_ghost_dist    = min_buster
+            my_busters[min_index].closest_ghost_x       = entity.x
+            my_busters[min_index].closest_ghost_y       = entity.y
+        else:
+            my_busters[min_index].closest_op_buster        = entity.entity_id
+            my_busters[min_index].closest_op_buster_dist   = min_buster
 
         # Debug printing
-        print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
         print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
+        print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
 
 
 def in_base(x, y):
@@ -292,7 +269,7 @@ def print_buster_info(buster: Buster):
 while True:
 
     # list with all ghost visible for this loop
-    all_ghost = []
+    all_entities = []
 
     # the number of busters and ghosts visible to you
     entities = int(input())
@@ -306,9 +283,9 @@ while True:
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
         info_turn(entity_id, x, y, entity_type, state, value)
 
-    print(f"ghost count: {len(all_ghost)} ", file=sys.stderr, flush=True)
-    # print(f"buster count: {len(my_busters)}", file=sys.stderr, flush=True)
-    closest_busters(all_ghost)
+    print(f"entity count: {len(all_entities)} ", file=sys.stderr, flush=True)
+
+    closest_entities(all_entities)
     update_status()
 
     for index, buster in enumerate(my_busters):
