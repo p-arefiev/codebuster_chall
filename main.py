@@ -38,7 +38,8 @@ class Buster(Entity):
         self.closest_ghost_y = 0
         self.closest_op_buster = 0
         self.closest_op_buster_dist = 0
-        self.stun_flag = False
+        self.stun_ready = True
+        self.stun_reload = 0
         self.status = "IDLE"
 
 
@@ -120,8 +121,8 @@ def closest_entities(all_entities):
             my_busters[min_index].closest_op_buster_dist   = min_buster
 
         # Debug printing
-        print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
-        print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
+        #print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
+        #print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
 
 
 def in_base(x, y):
@@ -148,6 +149,12 @@ def update_status():
     """
     for buster in my_busters:
 
+        # Count reloading time
+        if buster.stun_ready == False and buster.stun_reload > 0:
+            buster.stun_reload -= 1
+        elif buster.stun_ready == False and buster.stun_reload == 0:
+            buster.stun_ready = True
+
         # priority to ghost releasing
         if buster.value != -1 and not in_base(buster.x, buster.y):
             buster.status = "GB"
@@ -161,9 +168,14 @@ def update_status():
             pass
         
         # then is a buster sees another buster stun him
-        if buster.closest_op_buster != 0 and buster.closest_op_buster_dist < 1760 and not buster.stun_flag:
+        if buster.closest_op_buster != 0 and \
+         buster.closest_op_buster_dist < 1760 and \
+         buster.stun_ready and \
+         buster.stun_reload == 0:
+
             buster.status = "STUN"
-            buster.stun_flag = True
+            buster.stun_ready = False
+            buster.stun_reload = 20
             continue
 
         # check if a ghost is in sight
@@ -294,7 +306,7 @@ while True:
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
         info_turn(entity_id, x, y, entity_type, state, value)
 
-    print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
+    #print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
 
     closest_entities(all_entities)
     update_status()
