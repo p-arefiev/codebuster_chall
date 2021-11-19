@@ -51,31 +51,6 @@ class Ghost(Entity):
 his_busters = []
 my_busters = []
 
-def print_buster_info(buster: Buster):
-
-    header = [
-        'X', 'Y', 'state', 'value', 
-        'closest_ghost', 'closest_ghost_dist', 
-        'closest_op_buster', 'closest_op_buster_dist'
-        ]
-    row = [
-        buster.x, buster.y, buster.state, buster.value,
-        buster.closest_ghost, buster.closest_ghost_dist,
-        buster.closest_op_buster, buster.closest_op_buster_dist
-    ]
-
-    print('{:-^106}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
-    data = [header, row]
-    dash = '-' * 106
-
-    for i in range(len(data)):
-        if i == 0:
-            print('|{:^6s}{:^6s}{:^7s}{:^7s}{:^15s}{:^20s}{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
-            print(dash, file=sys.stderr, flush=True)
-        else:
-            print('|{:^6}{:^6}{:^7}{:^7}{:^15}{:^20}{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
-            print(dash, file=sys.stderr, flush=True)
-
 # Busters creation for the current game
 for i in range(busters_per_player):
     if my_team_id == 0:
@@ -88,7 +63,6 @@ for i in range(busters_per_player):
         my_busters.append(Buster(i + busters_per_player, 0, 0, 1, 0, 0))
         # Create obj for all my opponent busters
         his_busters.append(Buster(i, 0, 0, 0, 0, 0))
-
 
 # Set base position depending on which team we are
 ori_x = 0
@@ -218,6 +192,30 @@ def direction( busters_per_player, my_team_id, i):
         else:
             print(f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
 
+def print_buster_info(buster: Buster):
+
+    header = [
+        'X', 'Y', 'state', 'value', 
+        'closest_ghost', 'closest_ghost_dist', 
+        'closest_op_buster', 'closest_op_buster_dist'
+        ]
+    row = [
+        buster.x, buster.y, buster.state, buster.value,
+        buster.closest_ghost, buster.closest_ghost_dist,
+        buster.closest_op_buster, buster.closest_op_buster_dist
+    ]
+
+    print('{:-^106}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
+    data = [header, row]
+    dash = '-' * 106
+
+    for i in range(len(data)):
+        if i == 0:
+            print('|{:^6s}{:^6s}{:^7s}{:^7s}{:^15s}{:^20s}{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
+            print(dash, file=sys.stderr, flush=True)
+        else:
+            print('|{:^6}{:^6}{:^7}{:^7}{:^15}{:^20}{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
+            print(dash, file=sys.stderr, flush=True)
 
 
 # game loop
