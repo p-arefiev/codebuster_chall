@@ -328,6 +328,10 @@ while True:
 
         elif buster.status == "STUN":
             print(f"STUN {buster.closest_op_buster}")
+            # Reset values 
+            # TODO: need to be elsewhere
+            buster.closest_op_buster = 0
+            buster.closest_op_buster_dist = 0
 
         else:
             direction(busters_per_player, my_team_id, index)
