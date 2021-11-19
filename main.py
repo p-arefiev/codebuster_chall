@@ -81,44 +81,8 @@ def info_turn(entity_id, x, y, entity_type, state, value):
             my_busters[n].state = state
             my_busters[n].value = value
 
-            self.entity_type = 0
-
-def info_turn(entity_id, x, y, entity_type, state, value):
-    if entity_type == -1:
-        ghost = Ghost(entity_id, x, y, entity_type, state, value)
-        all_ghost.append( ghost )
-    elif entity_type == my_team_id:
-        buster = Buster(entity_id, x, y, entity_type, state, value)
-        all_buster.append(buster)
-
 def distance(x1, y1, x2, y2):
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
-
-def closest_busters(all_ghost, all_buster):
-    min_buster = []
-
-    for ghost_iter in range(len(all_ghost)): 
-        buster_dist = []
-
-        for buster_iter in range(busters_per_player):
-            buster_dist.append(
-                {
-                    "buster": all_buster[buster_iter].entity_id,
-                    "ghost": all_ghost[ghost_iter].entity_id,
-                    "dist": distance(
-                        all_buster[buster_iter].x,
-                        all_buster[buster_iter].y,
-                        all_ghost[ghost_iter].x,
-                        all_ghost[ghost_iter].y),
-                    "x" : all_ghost[ghost_iter].x,
-                    "y" : all_ghost[ghost_iter].y
-                }   
-            )
-        min_buster.append(min(buster_dist, key=lambda x:x['dist']))
-        print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
-    print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
-
-    return min_buster   
 
 def closest_busters(all_ghost):
 
@@ -181,9 +145,7 @@ def direction( busters_per_player, my_team_id, i):
         if busters_per_player == 1:
             print(f"MOVE 0 0")
         else:
-            print(f"MOVE {rand_x+int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
-
-
+            print(f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
 
 # game loop
 while True:
