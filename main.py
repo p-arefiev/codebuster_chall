@@ -45,25 +45,30 @@ class Ghost(Entity):
         )
         self.entity_type = entity_type
 
+his_busters = []
+my_busters = []
 
-all_buster = []
 for i in range(busters_per_player):
     if my_team_id == 0:
+        # Create obj for all my busters
         buster = Buster(i, 0, 0, 0, 0, 0)
-        all_buster.append(buster)
+        my_busters.append(buster)
+        # Create obj for all my opponent busters
+        buster_opp = Buster(i + busters_per_player, 0, 0, 1, 0, 0)
+        his_busters.append(buster)
     else:
+        # Create obj for all my busters
         buster = Buster(i + busters_per_player, 0, 0, 1, 0, 0)
-        all_buster.append(buster)
+        my_busters.append(buster)
+        # Create obj for all my opponent busters
+        buster_opp = Buster(i, 0, 0, 0, 0, 0)
+        his_busters.append(buster)
 
 ori_x = 0
 ori_y = 0
-base_x = 1600
-base_y = 1600
 if my_team_id == 1:
     ori_x = 16000
     ori_y = 9000
-    base_x = ori_x - 1600
-    base_y = ori_y - 1600
 
 def info_turn(entity_id, x, y, entity_type, state, value):
     if entity_type == -1:
@@ -71,10 +76,10 @@ def info_turn(entity_id, x, y, entity_type, state, value):
         all_ghost.append(ghost)
     elif entity_type == my_team_id :
             n = entity_id if my_team_id == 0 else entity_id - busters_per_player
-            all_buster[n].x = x
-            all_buster[n].y = y
-            all_buster[n].state = state
-            all_buster[n].value = value
+            my_busters[n].x = x
+            my_busters[n].y = y
+            my_busters[n].state = state
+            my_busters[n].value = value
 
 def distance(x1, y1, x2, y2):
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
@@ -86,8 +91,8 @@ def closest_busters(all_ghost):
     
         for buster_iter in range(busters_per_player):
             buster_dist.append(distance(
-                all_buster[buster_iter].x,
-                all_buster[buster_iter].y,
+                my_busters[buster_iter].x,
+                my_busters[buster_iter].y,
                 all_ghost[ghost_iter].x,
                 all_ghost[ghost_iter].y,
             ))
@@ -95,25 +100,19 @@ def closest_busters(all_ghost):
         #print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
         min_buster = min(buster_dist)
         min_index = buster_dist.index(min_buster)
-        all_buster[min_index].closest_ghost = all_ghost[ghost_iter].entity_id
-        all_buster[min_index].closest_ghost_x = all_ghost[ghost_iter].x
-        all_buster[min_index].closest_ghost_y = all_ghost[ghost_iter].y
-        all_buster[min_index].closest_ghost_dist = min_buster
+        my_busters[min_index].closest_ghost = all_ghost[ghost_iter].entity_id
+        my_busters[min_index].closest_ghost_x = all_ghost[ghost_iter].x
+        my_busters[min_index].closest_ghost_y = all_ghost[ghost_iter].y
+        my_busters[min_index].closest_ghost_dist = min_buster
 
 def in_base(x, y):
-    if my_team_id == 1:
-        if x < base_x or y < base_y:
-            return False
-        else:
-            return True
+    if distance(x, y, ori_x, ori_y) > 1600:
+        return False
     else:
-        if x > base_x or y > base_y:
-            return False
-        else:
-            return True
+        return True
 
 def update_status():
-    for buster_iter in all_buster:
+    for buster_iter in my_busters:
         if buster_iter.value != -1 and not in_base(buster_iter.x, buster_iter.y) :
             buster_iter.status = "GB"
             continue
@@ -146,7 +145,7 @@ def direction( busters_per_player, my_team_id, i):
         if busters_per_player == 1:
             print(f"MOVE 0 0")
         else:
-            print(f"MOVE {rand_x+int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
+            print(f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0")
 
 # game loop
 while True:
@@ -164,12 +163,12 @@ while True:
         info_turn(entity_id, x, y, entity_type, state, value)
 
     print(f"ghost count: {len(all_ghost)} ", file=sys.stderr, flush=True)
-    #print(f"buster count: {len(all_buster)}", file=sys.stderr, flush=True)
+    #print(f"buster count: {len(my_busters)}", file=sys.stderr, flush=True)
     closest_busters(all_ghost)
     update_status()
 
     #for i in range(busters_per_player):
-    for index, buster in enumerate(all_buster):
+    for index, buster in enumerate(my_busters):
         # Write an action using print
         # To debug: print("Debug messages...", file=sys.stderr, flush=True)
         # MOVE x y | BUST id | RELEASE
