@@ -206,16 +206,16 @@ def print_buster_info(buster: Buster):
         buster.closest_op_buster, buster.closest_op_buster_dist
     ]
 
-    print('{:-^110}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
+    print('{:-^118}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
     data = [header, row]
-    dash = '-' * 110
+    dash = '-' * 118
 
     for i in range(len(data)):
         if i == 0:
-            print('|{:^10s}{:^6s}{:^7s}{:^7s}{:^15s}{:^20s}{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8]), file=sys.stderr, flush=True)
+            print('|{:^10s}{:^6s}{:^6s}{:^7s}{:^7s}|{:^15s}{:^20s}|{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8]), file=sys.stderr, flush=True)
             print(dash, file=sys.stderr, flush=True)
         else:
-            print('|{:^10s}{:^6}{:^7}{:^7}{:^15}{:^20}{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8]), file=sys.stderr, flush=True)
+            print('|{:^10s}{:^6}{:^6}{:^7}{:^7}|{:^15}{:^20}|{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8]), file=sys.stderr, flush=True)
             print(dash, file=sys.stderr, flush=True)
 
 
