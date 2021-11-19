@@ -164,6 +164,7 @@ def update_status():
         elif buster_iter.value != -1 and in_base(buster_iter.x, buster_iter.y):
             buster_iter.status = "READY"
             buster_iter.closest_ghost = 0
+            buster_iter.closest_ghost_dist = 0
             continue
         else:
             pass
@@ -195,26 +196,26 @@ def direction( busters_per_player, my_team_id, i):
 def print_buster_info(buster: Buster):
 
     header = [
-        'X', 'Y', 'state', 'value', 
+        'status', 'X', 'Y', 'state', 'value', 
         'closest_ghost', 'closest_ghost_dist', 
         'closest_op_buster', 'closest_op_buster_dist'
         ]
     row = [
-        buster.x, buster.y, buster.state, buster.value,
+        buster.status, buster.x, buster.y, buster.state, buster.value,
         buster.closest_ghost, buster.closest_ghost_dist,
         buster.closest_op_buster, buster.closest_op_buster_dist
     ]
 
-    print('{:-^106}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
+    print('{:-^110}'.format(f"Buster id = {buster.entity_id}"), file=sys.stderr, flush=True)
     data = [header, row]
-    dash = '-' * 106
+    dash = '-' * 110
 
     for i in range(len(data)):
         if i == 0:
-            print('|{:^6s}{:^6s}{:^7s}{:^7s}{:^15s}{:^20s}{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
+            print('|{:^10s}{:^6s}{:^7s}{:^7s}{:^15s}{:^20s}{:^19s}{:^24s}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8]), file=sys.stderr, flush=True)
             print(dash, file=sys.stderr, flush=True)
         else:
-            print('|{:^6}{:^6}{:^7}{:^7}{:^15}{:^20}{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7]), file=sys.stderr, flush=True)
+            print('|{:^10s}{:^6}{:^7}{:^7}{:^15}{:^20}{:^19}{:^24}|'.format(data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8]), file=sys.stderr, flush=True)
             print(dash, file=sys.stderr, flush=True)
 
 
@@ -242,7 +243,6 @@ while True:
     update_status()
 
     for index, buster in enumerate(my_busters):
-        #print(f"buster {buster.entity_id} closes ghost: {buster.closest_ghost} | status: {buster.status}", file=sys.stderr, flush=True)
         print_buster_info(buster)
         
         if buster.status == "CHASING":
