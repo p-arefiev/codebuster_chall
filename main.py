@@ -161,7 +161,7 @@ def update_status():
             pass
         
         # then is a buster sees another buster stun him
-        if buster.closest_op_buster != 0 and buster.closest_op_buster_dist < 1600 and not buster.stun_flag:
+        if buster.closest_op_buster != 0 and buster.closest_op_buster_dist < 1760 and not buster.stun_flag:
             buster.status = "STUN"
             buster.stun_flag = True
             continue
