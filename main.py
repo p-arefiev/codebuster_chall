@@ -1,6 +1,8 @@
 import sys
 import math
 import random
+import time
+
 
 # Send your busters out into the fog to trap ghosts and bring them home!
 
@@ -297,6 +299,7 @@ while True:
     # the number of busters and ghosts visible to you
     entities = int(input())
 
+    start_time = time.time()
     for i in range(entities):
         # entity_id: buster id or ghost id
         # y: position of this buster / ghost
@@ -305,14 +308,14 @@ while True:
         # value: For busters: Ghost id being carried. For ghosts: number of busters attempting to trap this ghost.
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
         info_turn(entity_id, x, y, entity_type, state, value)
-
+    
     #print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
 
     closest_entities(all_entities)
     update_status()
 
     for index, buster in enumerate(my_busters):
-        print_buster_info(buster)
+        #print_buster_info(buster)
 
         if buster.status == "CHASING":
             print(f"MOVE {buster.closest_ghost_x} {buster.closest_ghost_y}")
@@ -335,3 +338,5 @@ while True:
 
         else:
             direction(busters_per_player, my_team_id, index)
+
+    print(f"--- {float((time.time() - start_time)) * 1000} ms ---", file=sys.stderr, flush=True)
