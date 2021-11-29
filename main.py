@@ -1,6 +1,8 @@
 import sys
 import math
 import random
+import time
+
 
 # Send your busters out into the fog to trap ghosts and bring them home!
 
@@ -32,7 +34,7 @@ class Buster(Entity):
             state,
             value,
         )
-        self.closest_ghost = 0
+        self.closest_ghost = -1
         self.closest_ghost_dist = 0
         self.closest_ghost_x = 0
         self.closest_ghost_y = 0
@@ -41,6 +43,10 @@ class Buster(Entity):
         self.stun_ready = True
         self.stun_reload = 0
         self.status = "IDLE"
+        self.target_x = 0
+        self.target_y = 0
+        self.pos_max = False
+        self.pos_min = True
 
 
 # Busters creation for the current game
@@ -156,16 +162,12 @@ def update_status():
             buster.stun_ready = True
 
         # priority to ghost releasing
-        if buster.value != -1 and not in_base(buster.x, buster.y):
+        if buster.value != -1 and buster.state == 1 and not in_base(buster.x, buster.y):
             buster.status = "GB"
             continue
-        elif buster.value != -1 and in_base(buster.x, buster.y):
+        elif buster.value != -1 and buster.state == 1 and in_base(buster.x, buster.y):
             buster.status = "READY"
-            buster.closest_ghost = 0
-            buster.closest_ghost_dist = 0
             continue
-        else:
-            pass
         
         # then is a buster sees another buster stun him
         if buster.closest_op_buster != 0 and \
@@ -179,15 +181,18 @@ def update_status():
             continue
 
         # check if a ghost is in sight
-        if buster.closest_ghost > 0 and buster.closest_ghost_dist > 1700:
+        if buster.closest_ghost >= 0 \
+            and buster.closest_ghost_dist > 1700:
+                
             buster.status = "CHASING"
-        elif (
-            buster.closest_ghost > 0
-            and buster.closest_ghost_dist < 1700
-            and buster.closest_ghost_dist > 900
-        ):
+        elif buster.closest_ghost >= 0 \
+            and buster.closest_ghost_dist < 1700 \
+            and buster.closest_ghost_dist > 900:
+                
             buster.status = "BUSTING"
-        elif buster.closest_ghost > 0 and buster.closest_ghost_dist < 900:
+        elif buster.closest_ghost >= 0 \
+            and buster.closest_ghost_dist < 900:
+            
             buster.closest_ghost_x = buster.closest_ghost_x - (
                 -900 if my_team_id == 0 else 900
             )
@@ -198,24 +203,55 @@ def update_status():
         else:
             buster.status = "IDLE"
 
+            if buster.x >= 16000 or buster.y >= 9000:
+                buster.pos_max = True
 
-def direction(busters_per_player, my_team_id, i):
-    rand_x = random.randint(0, 100)
-    rand_y = random.randint(0, 100)
-    if my_team_id == 0:
-        if busters_per_player == 1:
-            print(f"MOVE 16000 9000")
-        else:
-            print(
-                f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player +1))))*9000)} 9000"
-            )
+
+def direction(buster: Buster, index):
+    
+    if buster.pos_max == False:
+        if busters_per_player == 2:
+            if index == 0:
+                x = abs(ori_x - int(math.tan(math.radians(25))*9000)) 
+                y = 9000 - ori_y
+            elif index == 1:
+                x = 16000 - ori_x
+                y = abs(ori_y-int(math.tan(math.radians(10))*16000))
+        elif busters_per_player == 3:
+            if index == 0:
+                x = 16000 - ori_x
+                y = 9000 - ori_y
+            elif index == 1:
+                x = 16000 - ori_x
+                y = abs(ori_y -int(math.tan(math.radians(8))*16000))
+            elif index ==2:
+                x = abs(ori_x -int(math.tan(math.radians(15))*9000))
+                y = 9000 - ori_y
+        elif busters_per_player == 4:
+            if index == 0:
+                x = abs(ori_x -int(math.tan(math.radians(40))*9000))
+                y = 9000 - ori_y
+            elif index == 1:
+                x = 16000 - ori_x
+                y = abs(ori_y - int(math.tan(math.radians(25))*16000))
+            elif index ==2:
+                x = abs(ori_x - int(math.tan(math.radians(10))*9000))
+                y = 9000 - ori_y
+            elif index ==3:
+                x = 16000 - ori_x
+                y = abs(ori_y - int(math.tan(math.radians(5))*16000))
     else:
-        if busters_per_player == 1:
-            print(f"MOVE 0 0")
-        else:
-            print(
-                f"MOVE {rand_x + int(math.tan(math.radians((i+1)*(90/(busters_per_player+1))))*9000)} 0"
-            )
+        x = ori_x
+        y = ori_y
+            
+    if x >= 16000:
+        x = 16000
+    
+    if y >= 9000:
+        y = 9000
+    
+    buster.target_x = x
+    buster.target_y = y
 
 
 def print_buster_info(buster: Buster):
@@ -297,6 +333,7 @@ while True:
     # the number of busters and ghosts visible to you
     entities = int(input())
 
+    start_time = time.time()
     for i in range(entities):
         # entity_id: buster id or ghost id
         # y: position of this buster / ghost
@@ -305,14 +342,16 @@ while True:
         # value: For busters: Ghost id being carried. For ghosts: number of busters attempting to trap this ghost.
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
         info_turn(entity_id, x, y, entity_type, state, value)
-
+    
     #print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
-
+    
+    # Updating flag values:
     closest_entities(all_entities)
     update_status()
 
     for index, buster in enumerate(my_busters):
         print_buster_info(buster)
+        direction(buster, index)
 
         if buster.status == "CHASING":
             print(f"MOVE {buster.closest_ghost_x} {buster.closest_ghost_y}")
@@ -328,10 +367,13 @@ while True:
 
         elif buster.status == "STUN":
             print(f"STUN {buster.closest_op_buster}")
-            # Reset values 
-            # TODO: need to be elsewhere
-            buster.closest_op_buster = 0
-            buster.closest_op_buster_dist = 0
 
         else:
-            direction(busters_per_player, my_team_id, index)
+            print(f"MOVE {buster.target_x} {buster.target_y}")
+        
+        buster.closest_ghost = -1
+        buster.closest_ghost_dist = 0
+        buster.closest_op_buster = 0
+        buster.closest_op_buster_dist = 0
+
+    print(f"--- {float((time.time() - start_time)) * 1000} ms ---", file=sys.stderr, flush=True)
