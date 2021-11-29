@@ -96,14 +96,14 @@ def distance(x1, y1, x2, y2):
 
 def closest_entities(all_entities):
     """
-    Look for closest ghost per buster when ghost are insight
+    Look for closest entity per buster when ghost are insight
     """
     
-    # Loop through all created ghost for this loop
+    # Loop through all created entity for this loop
     for entity in all_entities:
         buster_dist = []
 
-        # For each buster find its distance for a given ghost
+        # For each buster find its distance for a given entity
         for buster in my_busters:
             buster_dist.append(
                 distance(
@@ -113,7 +113,7 @@ def closest_entities(all_entities):
             )
 
         # With all distance calculated choose the smaller one
-        # => closest buster for this ghost
+        # => closest buster to this entity
         min_buster = min(buster_dist)
         min_index = buster_dist.index(min_buster)
         if entity.entity_type == -1:
@@ -123,6 +123,7 @@ def closest_entities(all_entities):
             my_busters[min_index].closest_ghost_x       = entity.x
             my_busters[min_index].closest_ghost_y       = entity.y
         else:
+            # Update buster params with closest buster informations
             my_busters[min_index].closest_op_buster        = entity.entity_id
             my_busters[min_index].closest_op_buster_dist   = min_buster
 
@@ -149,7 +150,7 @@ def update_status():
     - IDLE => looking for an entity
     - CHASING => ghost in sight, getting closer to a ghost to bust him
     - BUSTING => a buster is ready to bust
-    - GB => buster is going back to his base while carrying a ghost
+    - BASE => buster is going back to his base while carrying a ghost
     - READY => when a buster is ready to release a ghost in his base
     - STUN => has a buster in sight, go for the kill
     """
@@ -163,7 +164,7 @@ def update_status():
 
         # priority to ghost releasing
         if buster.value != -1 and buster.state == 1 and not in_base(buster.x, buster.y):
-            buster.status = "GB"
+            buster.status = "BASE"
             continue
         elif buster.value != -1 and buster.state == 1 and in_base(buster.x, buster.y):
             buster.status = "READY"
@@ -359,7 +360,7 @@ while True:
         elif buster.status == "BUSTING":
             print(f"BUST {buster.closest_ghost}")
 
-        elif buster.status == "GB":
+        elif buster.status == "BASE":
             print(f"MOVE {ori_x} {ori_y}")
 
         elif buster.status == "READY":
