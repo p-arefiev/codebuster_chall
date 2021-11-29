@@ -98,38 +98,46 @@ def closest_entities(all_entities):
     """
     Look for closest entity per buster when ghost are insight
     """
-    
+
     # Loop through all created entity for this loop
     for entity in all_entities:
         buster_dist = []
 
-        # For each buster find its distance for a given entity
+        # For each buster find its distance to a given entity
         for buster in my_busters:
-            buster_dist.append(
-                distance(
-                    buster.x, buster.y,
-                    entity.x, entity.y,
+            if entity.entity_type == -1:
+                # Update buster params with closest ghost informations
+                buster.closest_ghost = entity.entity_id
+                buster.closest_ghost_dist = distance(
+                    buster.x,
+                    buster.y,
+                    entity.x,
+                    entity.y,
                 )
-            )
+                buster.closest_ghost_x = entity.x
+                buster.closest_ghost_y = entity.y
+            else:
+                buster_dist.append(
+                    distance(
+                        buster.x,
+                        buster.y,
+                        entity.x,
+                        entity.y,
+                    )
+                )
 
         # With all distance calculated choose the smaller one
         # => closest buster to this entity
-        min_buster = min(buster_dist)
-        min_index = buster_dist.index(min_buster)
-        if entity.entity_type == -1:
-            # Update buster params with closest ghost informations
-            my_busters[min_index].closest_ghost         = entity.entity_id
-            my_busters[min_index].closest_ghost_dist    = min_buster
-            my_busters[min_index].closest_ghost_x       = entity.x
-            my_busters[min_index].closest_ghost_y       = entity.y
-        else:
+        if entity.entity_type != -1:
+            min_buster = min(buster_dist)
+            min_index = buster_dist.index(min_buster)
             # Update buster params with closest buster informations
-            my_busters[min_index].closest_op_buster        = entity.entity_id
-            my_busters[min_index].closest_op_buster_dist   = min_buster
+            my_busters[min_index].closest_op_buster = entity.entity_id
+            my_busters[min_index].closest_op_buster_dist = min_buster
 
         # Debug printing
-        #print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
-        #print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
+        # print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
+        # print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
 
 
 def in_base(x, y):
@@ -169,12 +177,14 @@ def update_status():
         elif buster.value != -1 and buster.state == 1 and in_base(buster.x, buster.y):
             buster.status = "READY"
             continue
-        
+
         # then is a buster sees another buster stun him
-        if buster.closest_op_buster != 0 and \
-         buster.closest_op_buster_dist < 1760 and \
-         buster.stun_ready and \
-         buster.stun_reload == 0:
+        if (
+            buster.closest_op_buster != 0
+            and buster.closest_op_buster_dist < 1760
+            and buster.stun_ready
+            and buster.stun_reload == 0
+        ):
 
             buster.status = "STUN"
             buster.stun_ready = False
@@ -182,18 +192,18 @@ def update_status():
             continue
 
         # check if a ghost is in sight
-        if buster.closest_ghost >= 0 \
-            and buster.closest_ghost_dist > 1700:
-                
+        if buster.closest_ghost >= 0 and buster.closest_ghost_dist > 1700:
+
             buster.status = "CHASING"
-        elif buster.closest_ghost >= 0 \
-            and buster.closest_ghost_dist < 1700 \
-            and buster.closest_ghost_dist > 900:
-                
+        elif (
+            buster.closest_ghost >= 0
+            and buster.closest_ghost_dist < 1700
+            and buster.closest_ghost_dist > 900
+        ):
+
             buster.status = "BUSTING"
-        elif buster.closest_ghost >= 0 \
-            and buster.closest_ghost_dist < 900:
-            
+        elif buster.closest_ghost >= 0 and buster.closest_ghost_dist < 900:
+
             buster.closest_ghost_x = buster.closest_ghost_x - (
                 -900 if my_team_id == 0 else 900
             )
@@ -209,48 +219,48 @@ def update_status():
 
 
 def direction(buster: Buster, index):
-    
+
     if buster.pos_max == False:
         if busters_per_player == 2:
             if index == 0:
-                x = abs(ori_x - int(math.tan(math.radians(25))*9000)) 
+                x = abs(ori_x - int(math.tan(math.radians(25)) * 9000))
                 y = 9000 - ori_y
             elif index == 1:
                 x = 16000 - ori_x
-                y = abs(ori_y-int(math.tan(math.radians(10))*16000))
+                y = abs(ori_y - int(math.tan(math.radians(10)) * 16000))
         elif busters_per_player == 3:
             if index == 0:
                 x = 16000 - ori_x
                 y = 9000 - ori_y
             elif index == 1:
                 x = 16000 - ori_x
-                y = abs(ori_y -int(math.tan(math.radians(8))*16000))
-            elif index ==2:
-                x = abs(ori_x -int(math.tan(math.radians(15))*9000))
+                y = abs(ori_y - int(math.tan(math.radians(8)) * 16000))
+            elif index == 2:
+                x = abs(ori_x - int(math.tan(math.radians(15)) * 9000))
                 y = 9000 - ori_y
         elif busters_per_player == 4:
             if index == 0:
-                x = abs(ori_x -int(math.tan(math.radians(40))*9000))
+                x = abs(ori_x - int(math.tan(math.radians(40)) * 9000))
                 y = 9000 - ori_y
             elif index == 1:
                 x = 16000 - ori_x
-                y = abs(ori_y - int(math.tan(math.radians(25))*16000))
-            elif index ==2:
-                x = abs(ori_x - int(math.tan(math.radians(10))*9000))
+                y = abs(ori_y - int(math.tan(math.radians(25)) * 16000))
+            elif index == 2:
+                x = abs(ori_x - int(math.tan(math.radians(10)) * 9000))
                 y = 9000 - ori_y
-            elif index ==3:
+            elif index == 3:
                 x = 16000 - ori_x
-                y = abs(ori_y - int(math.tan(math.radians(5))*16000))
+                y = abs(ori_y - int(math.tan(math.radians(5)) * 16000))
     else:
         x = ori_x
         y = ori_y
-            
+
     if x >= 16000:
         x = 16000
-    
+
     if y >= 9000:
         y = 9000
-    
+
     buster.target_x = x
     buster.target_y = y
 
@@ -343,9 +353,9 @@ while True:
         # value: For busters: Ghost id being carried. For ghosts: number of busters attempting to trap this ghost.
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
         info_turn(entity_id, x, y, entity_type, state, value)
-    
-    #print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
-    
+
+    # print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
+
     # Updating flag values:
     closest_entities(all_entities)
     update_status()
@@ -371,10 +381,14 @@ while True:
 
         else:
             print(f"MOVE {buster.target_x} {buster.target_y}")
-        
+
         buster.closest_ghost = -1
         buster.closest_ghost_dist = 0
         buster.closest_op_buster = 0
         buster.closest_op_buster_dist = 0
 
-    print(f"--- {float((time.time() - start_time)) * 1000} ms ---", file=sys.stderr, flush=True)
+    print(
+        f"--- {float((time.time() - start_time)) * 1000} ms ---",
+        file=sys.stderr,
+        flush=True,
+    )
