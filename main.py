@@ -14,7 +14,7 @@ ghost_count = int(input())
 my_team_id = int(input())
 
 
-class Entity:
+class Buster():
     def __init__(self, entity_id, x, y, entity_type, state, value):
         self.entity_id = entity_id
         self.x = x
@@ -22,27 +22,18 @@ class Entity:
         self.state = state
         self.value = value
         self.entity_type = entity_type
-
-
-class Buster(Entity):
-    def __init__(self, entity_id, x, y, entity_type, state, value):
-        super().__init__(
-            entity_id,
-            x,
-            y,
-            entity_type,
-            state,
-            value,
-        )
         self.closest_ghost = -1
-        self.closest_ghost_dist = 0
+        self.closest_ghost_dist = 999999999
         self.closest_ghost_x = 0
         self.closest_ghost_y = 0
-        self.closest_op_buster = 0
-        self.closest_op_buster_dist = 0
+        self.closest_op_buster = -1
+        self.closest_op_buster_dist = 999999999
+        self.closest_op_state = -1
         self.stun_ready = True
         self.stun_reload = 0
         self.status = "IDLE"
+
+        # tmp
         self.target_x = 0
         self.target_y = 0
         self.pos_max = False
@@ -66,78 +57,46 @@ if my_team_id == 1:
     ori_x = 16000
     ori_y = 9000
 
-
-def info_turn(entity_id, x, y, entity_type, state, value):
-    """
-    Each loop create all insight ghosts.
-    Update our buster positions state & value
-    Same for opponent busters.
-    """
-
-    # Check entity type to choose what action to do :  create a ghost / update our
-    # Busters infos / update opponent buster info
-    if entity_type == my_team_id:
-        # Use entity id to select one of our buster
-        n = entity_id if my_team_id == 0 else entity_id - busters_per_player
-        my_busters[n].x = x
-        my_busters[n].y = y
-        my_busters[n].state = state
-        my_busters[n].value = value
-    else:
-        all_entities.append(Entity(entity_id, x, y, entity_type, state, value))
-
-
 def distance(x1, y1, x2, y2):
     """
     return distance between 2 points
     """
     return int(math.sqrt(math.pow((x1 - x2), 2) + math.pow((y1 - y2), 2)))
 
+def info_turn(entity_id, x, y, entity_type, state, value):
 
-def closest_entities(all_entities):
-    """
-    Look for closest entity per buster when ghost are insight
-    """
+    if entity_type == my_team_id:
+        # Use entity id to select one of our buster
+        n = entity_id if my_team_id == 0 else entity_id - busters_per_player
+        my_busters[n].x = x
+        my_busters[n].y = y
+        my_busters[n].state = state
+        my_busters[n].value = value 
 
-    # Loop through all created entity for this loop
-    for entity in all_entities:
-        buster_dist = []
-
-        # For each buster find its distance to a given entity
+    # For each buster find its distance to a given entity
+    elif entity_type != my_team_id:
         for buster in my_busters:
-            if entity.entity_type == -1:
-                # Update buster params with closest ghost informations
-                buster.closest_ghost = entity.entity_id
-                buster.closest_ghost_dist = distance(
-                    buster.x,
-                    buster.y,
-                    entity.x,
-                    entity.y,
-                )
-                buster.closest_ghost_x = entity.x
-                buster.closest_ghost_y = entity.y
-            else:
-                buster_dist.append(
-                    distance(
-                        buster.x,
-                        buster.y,
-                        entity.x,
-                        entity.y,
-                    )
-                )
-
-        # With all distance calculated choose the smaller one
-        # => closest buster to this entity
-        if entity.entity_type != -1:
-            min_buster = min(buster_dist)
-            min_index = buster_dist.index(min_buster)
+            buster_dist = distance(
+                buster.x,
+                buster.y,
+                x,
+                y,
+            )
+            
             # Update buster params with closest buster informations
-            my_busters[min_index].closest_op_buster = entity.entity_id
-            my_busters[min_index].closest_op_buster_dist = min_buster
+            if entity_type == -1 :
+                #print(f"visible", file=sys.stderr, flush=True)
+                if buster.closest_ghost_dist > buster_dist:
+                    buster.closest_ghost = entity_id
+                    buster.closest_ghost_x = x
+                    buster.closest_ghost_y = y
+                    buster.closest_ghost_dist = buster_dist
 
-        # Debug printing
-        # print(f"buster dist : {buster_dist}", file=sys.stderr, flush=True)
-        # print(f"min dist : {min_buster}", file=sys.stderr, flush=True)
+            elif entity_type != -1: 
+                if buster.closest_op_buster_dist > buster_dist:
+                    buster.closest_op_buster = entity_id
+                    buster.closest_op_buster_dist = buster_dist
+                    buster.closest_op_buster_state = state
 
 
 def in_base(x, y):
@@ -150,8 +109,18 @@ def in_base(x, y):
     else:
         return True
 
+def no_stunner(closest_op_buster):
+    other_stuns = True
+    for stunner in my_busters:
+        if( stunner.status == "STUN" and
+            stunner.closest_op_buster == closest_op_buster
+        ):
+            other_stuns = False
+            break
 
-def update_status():
+    return other_stuns
+
+def update_status(buster: Buster):
     """
     Main buster loop here its overall status is updated.
     A buster can have one of the 5 status.
@@ -162,60 +131,59 @@ def update_status():
     - READY => when a buster is ready to release a ghost in his base
     - STUN => has a buster in sight, go for the kill
     """
-    for buster in my_busters:
 
-        # Count reloading time
-        if buster.stun_ready == False and buster.stun_reload > 0:
-            buster.stun_reload -= 1
-        elif buster.stun_ready == False and buster.stun_reload == 0:
-            buster.stun_ready = True
+    # Count reloading time
+    if buster.stun_ready == False and buster.stun_reload > 0:
+        buster.stun_reload -= 1
+    elif buster.stun_ready == False and buster.stun_reload == 0:
+        buster.stun_ready = True
 
-        # priority to ghost releasing
-        if buster.value != -1 and buster.state == 1 and not in_base(buster.x, buster.y):
-            buster.status = "BASE"
-            continue
-        elif buster.value != -1 and buster.state == 1 and in_base(buster.x, buster.y):
-            buster.status = "READY"
-            continue
+    # priority to ghost releasing
+    if buster.value != -1 and buster.state == 1 and not in_base(buster.x, buster.y):
+        buster.status = "BASE"
+        return
+    elif buster.value != -1 and buster.state == 1 and in_base(buster.x, buster.y):
+        buster.status = "READY"
+        return
+    # then is a buster sees another buster stun him
+    if (
+        buster.closest_op_buster != -1
+        and buster.closest_op_buster_state != 2
+        and buster.closest_op_buster_dist < 1760
+        and buster.stun_ready
+        and no_stunner(buster.closest_op_buster)
+    ):
+                    
+        buster.status = "STUN"
+        buster.stun_ready = False
+        buster.stun_reload = 20
+        return
 
-        # then is a buster sees another buster stun him
-        if (
-            buster.closest_op_buster != 0
-            and buster.closest_op_buster_dist < 1760
-            and buster.stun_ready
-            and buster.stun_reload == 0
-        ):
+    # check if a ghost is in sight
+    if buster.closest_ghost >= 0 and buster.closest_ghost_dist > 1700:
 
-            buster.status = "STUN"
-            buster.stun_ready = False
-            buster.stun_reload = 20
-            continue
+        buster.status = "CHASING"
+    elif (
+        buster.closest_ghost >= 0
+        and buster.closest_ghost_dist < 1700
+        and buster.closest_ghost_dist > 900
+    ):
 
-        # check if a ghost is in sight
-        if buster.closest_ghost >= 0 and buster.closest_ghost_dist > 1700:
+        buster.status = "BUSTING"
+    elif buster.closest_ghost >= 0 and buster.closest_ghost_dist < 900:
 
-            buster.status = "CHASING"
-        elif (
-            buster.closest_ghost >= 0
-            and buster.closest_ghost_dist < 1700
-            and buster.closest_ghost_dist > 900
-        ):
+        buster.closest_ghost_x = buster.closest_ghost_x - (
+            -900 if my_team_id == 0 else 900
+        )
+        buster.closest_ghost_y = buster.closest_ghost_y - (
+            -900 if my_team_id == 0 else 900
+        )
+        buster.status = "CHASING"
+    else:
+        buster.status = "IDLE"
 
-            buster.status = "BUSTING"
-        elif buster.closest_ghost >= 0 and buster.closest_ghost_dist < 900:
-
-            buster.closest_ghost_x = buster.closest_ghost_x - (
-                -900 if my_team_id == 0 else 900
-            )
-            buster.closest_ghost_y = buster.closest_ghost_y - (
-                -900 if my_team_id == 0 else 900
-            )
-            buster.status = "CHASING"
-        else:
-            buster.status = "IDLE"
-
-            if buster.x >= 16000 or buster.y >= 9000:
-                buster.pos_max = True
+        if buster.x >= 16000 or buster.y >= 9000:
+            buster.pos_max = True
 
 
 def direction(buster: Buster, index):
@@ -338,9 +306,6 @@ def print_buster_info(buster: Buster):
 # game loop
 while True:
 
-    # list with all ghost visible for this loop
-    all_entities = []
-
     # the number of busters and ghosts visible to you
     entities = int(input())
 
@@ -357,10 +322,9 @@ while True:
     # print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
 
     # Updating flag values:
-    closest_entities(all_entities)
-    update_status()
 
     for index, buster in enumerate(my_busters):
+        update_status(buster)
         print_buster_info(buster)
         direction(buster, index)
 
@@ -383,9 +347,9 @@ while True:
             print(f"MOVE {buster.target_x} {buster.target_y}")
 
         buster.closest_ghost = -1
-        buster.closest_ghost_dist = 0
-        buster.closest_op_buster = 0
-        buster.closest_op_buster_dist = 0
+        buster.closest_ghost_dist = 99999999999
+        buster.closest_op_buster = -1
+        buster.closest_op_buster_dit = 99999999999
 
     print(
         f"--- {float((time.time() - start_time)) * 1000} ms ---",
