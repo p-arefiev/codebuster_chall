@@ -98,7 +98,6 @@ def info_turn(entity_id, x, y, entity_type, state, value):
                     buster.closest_op_buster_dist = buster_dist
                     buster.closest_op_buster_state = state
 
-
 def in_base(x, y):
     """
     Find out if a buster is within the range of his base.
@@ -321,11 +320,10 @@ while True:
 
     # print(f"visible entities: {len(all_entities)} ", file=sys.stderr, flush=True)
 
-    # Updating flag values:
 
     for index, buster in enumerate(my_busters):
+        # Updating flag values:
         update_status(buster)
-        print_buster_info(buster)
         direction(buster, index)
 
         if buster.status == "CHASING":
@@ -351,6 +349,8 @@ while True:
         buster.closest_op_buster = -1
         buster.closest_op_buster_dit = 99999999999
 
+        print_buster_info(buster)
+        
     print(
         f"--- {float((time.time() - start_time)) * 1000} ms ---",
         file=sys.stderr,
